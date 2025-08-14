@@ -3,11 +3,15 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
+import { Gloria_Hallelujah } from "next/font/google"
 import { useSession, signOut } from "next-auth/react"
 import { useCart } from "@/contexts/cart-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ShoppingCart, User, Search, Shield } from "lucide-react"
+
+const logoFont = Gloria_Hallelujah({ weight: "400", subsets: ["latin"] })
 
 export function Header() {
   const { data: session } = useSession()
@@ -28,8 +32,9 @@ export function Header() {
     <header className="border-b">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-blue-600">
-            🛒 Mock Shop
+          <Link href="/" className={`flex items-center gap-2 text-2xl font-bold text-slate-600 ${logoFont.className}`}>
+            <Image src="/logo.png" alt="Mock Shop logo" width={32} height={32} />
+            <span>Mock Shop</span>
           </Link>
           
           <div className="flex items-center space-x-4">

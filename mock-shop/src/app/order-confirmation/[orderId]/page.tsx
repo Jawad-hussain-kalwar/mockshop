@@ -34,9 +34,10 @@ async function getOrder(orderId: string) {
 export default async function OrderConfirmationPage({
   params,
 }: {
-  params: { orderId: string }
+  params: Promise<{ orderId: string }>
 }) {
-  const order = await getOrder(params.orderId)
+  const { orderId } = await params
+  const order = await getOrder(orderId)
 
   if (!order) {
     notFound()

@@ -5,14 +5,15 @@ import { prisma } from "@/lib/prisma"
 // GET /api/admin/orders/[id] - Get specific order details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const adminCheck = await requireAdmin()
   if (adminCheck) return adminCheck
 
   try {
+    const { id } = await params
     const order = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: {
           select: {
@@ -51,7 +52,7 @@ export async function GET(
 // PATCH /api/admin/orders/[id] - Update order status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const adminCheck = await requireAdmin()
   if (adminCheck) return adminCheck
@@ -63,8 +64,9 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid status" }, { status: 400 })
     }
 
+    const { id } = await params
     const order = await prisma.order.update({
-      where: { id: params.id },
+      where: { id },
       data: { status },
       include: {
         user: {

@@ -8,6 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "test:e2e": "playwright test",
+    "test:api": "cd postman && node run-api-tests.js smoke",
+    "test:api:full": "cd postman && node run-api-tests.js full",
+    "test:api:security": "cd postman && node run-api-tests.js security",
+    "test:api:performance": "cd postman && node run-api-tests.js performance",
+    "health-check": "cd postman && node health-check.js",
     "db:seed": "tsx prisma/seed.ts",
     "fix:images": "node scripts/fix-images.js"
   },

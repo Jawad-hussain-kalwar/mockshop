@@ -1,0 +1,36 @@
+{
+  "name": "mock-shop-api-tests",
+  "version": "1.0.0",
+  "description": "API testing suite for Mock Shop e-commerce application",
+  "main": "run-api-tests.js",
+  "scripts": {
+    "test": "node run-api-tests.js smoke",
+    "test:full": "node run-api-tests.js full",
+    "test:smoke": "node run-api-tests.js smoke",
+    "test:security": "node run-api-tests.js security",
+    "test:performance": "node run-api-tests.js performance",
+    "test:auth": "node run-api-tests.js auth",
+    "test:admin": "node run-api-tests.js admin",
+    "test:all": "node run-api-tests.js smoke auth security performance admin",
+    "install-newman": "npm install -g newman newman-reporter-html",
+    "clean-reports": "rm -rf reports/*",
+    "help": "node run-api-tests.js --help"
+  },
+  "keywords": [
+    "api",
+    "testing",
+    "postman",
+    "newman",
+    "e-commerce",
+    "mock-shop"
+  ],
+  "author": "Mock Shop Team",
+  "license": "MIT",
+  "devDependencies": {
+    "newman": "^6.0.0",
+    "newman-reporter-html": "^1.0.5"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

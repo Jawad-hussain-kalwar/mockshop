@@ -15,6 +15,11 @@ Status key: [ ] open, [wip] in progress, [x] fixed/verified
   - `http://localhost:3000/admin/products/new` leads to 404
   - status: Investigation Pending
 
+- [ ] Admin: Missing product create/edit pages (UI)
+  - Only `admin/products/page.tsx` exists; no `/admin/products/new` or `/admin/products/[id]/edit` pages in `src/app`.
+  - Impact: Cannot create or edit products via UI; contradicts docs/tasks.
+  - status: Investigation Pending
+
 - [ ] Admin: edit product does not work - 
   - `http://localhost:3000/admin/products/[id]/edit` leads to 404
   - status: Investigation Pending
@@ -23,20 +28,53 @@ Status key: [ ] open, [wip] in progress, [x] fixed/verified
   - on `http://localhost:3000/admin/orders` after filtering confirmed shows no orders, while marking some orders as delivered, and then filtering delivered shows those orders.
   - status: Investigation Pending
 
+- [ ] Admin: Missing Customers management UI
+  - `/admin/customers` route 404 and no `src/app/admin/customers/page.tsx` present.
+  - Impact: Cannot view or manage customers.
+  - status: Investigation Pending
+
+- [ ] Admin: Missing Analytics UI implementation
+  - `/admin/analytics` page exists but backend endpoints for analytics are not present; unclear if data wired.
+  - Impact: Likely incomplete feature; verify data sources and charts.
+  - status: Investigation Pending
+
 - [ ] Admin: Missing Customers page
   - `http://localhost:3000/admin/customers` leads to 404
   - status: Investigation Pending
+
+- [ ] Admin: Missing Order details page (UI)
+  - `/admin/orders/[id]` not implemented; only API endpoints exist. Cannot view order details in admin.
+  - status: Investigation Pending
+
+- [ ] Noticable Jank: Admin orders page missing `sizes` on thumbnails
+  - Symptom: `<Image fill />` in admin orders list preview lacks `sizes`.
+  - Impact: Warnings and layout issues.
+  - Fix: Provide `sizes` for small preview images.
 
 - [ ] Admin: Back to Dashboard Button misplaced
   - `Back to Dashboard` apears to be on the left of page heading in the same line rather than being on the top of it
   - status: Investigation Pending [required screenshots]
 
+- [ ] Hazardous Jank: Multiple pages use `<Image fill />` without `sizes`
+  - Locations: `account/orders`, `order-confirmation/[orderId]`, `products/[id]`, admin listings.
+  - Impact: Layout shift and performance warnings.
+  - Fix: Add `sizes` attributes per breakpoint usage.
+
 - [ ] User: Missing Feature-> Registered users do not have saved details
   - when the registered users proceed to checkout their details are not stored anywhere and aren't filled automatically
   - status: Investigation Pending
 
+- [ ] Requirement Gap: Email notifications not implemented
+  - Docs mention order confirmation/status emails; no email service integration observed in code.
+  - Impact: Users receive no confirmations; admins not notified.
+  - status: Investigation Pending
+
 - [ ] User: Missing Feature-> No filter and sort on the catalog page
   - on the  product catalog on `http://localhost:3000/products` or `http://localhost:3000/products?category=[category]` pages there is no filter or sort options
+  - status: Investigation Pending
+
+- [ ] User: Incomplete Feature -> Product detail page actions do not call APIs
+  - On `/products/[id]` the "Add to Cart" and "Wishlist" buttons lack handlers and do not mutate state or call `/api/cart` or `/api/wishlist`.
   - status: Investigation Pending
 
 - [ ] Next 15 dynamic APIs: synchronous `params` usage - **STATUS UNCLEAR**
@@ -44,6 +82,16 @@ Status key: [ ] open, [wip] in progress, [x] fixed/verified
   - Testing: Navigated to product detail pages, no visible params warnings in browser console. May only appear in server logs.
   - Impact: No functional break observed; pages respond correctly.
   - Fix: Update route handlers/pages to `await params` per Next.js 15 guidance.
+
+- [ ] Noticable Jank: `next/image` with `fill` missing `sizes` in multiple pages
+  - Evidence: `order-confirmation/[orderId]`, `account/orders`, `products/[id]`, and others use `<Image fill />` without `sizes`.
+  - Impact: Layout shift/perf warnings; suboptimal responsive behavior.
+  - Fix: Add appropriate `sizes` to all `fill` images.
+
+- [ ] Noticable Jank: Checkout/cart thumbnails missing `sizes`
+  - Symptom: Thumbnails on `/checkout` and `/cart` use `<Image fill />` without `sizes`.
+  - Impact: Performance warnings, layout instability.
+  - Fix: Provide `sizes` strings appropriate for small thumbnails.
 
 - [ ] next/image with `fill` missing `sizes` - **CONFIRMED STILL EXISTS**
   - Symptom: Multiple console warnings observed: "Image with src '/images/tshirt1/tshirt.webp' has 'fill' but is missing 'sizes' prop"
@@ -66,6 +114,11 @@ Status key: [ ] open, [wip] in progress, [x] fixed/verified
   - Next: Verify `/cart` content and ensure header cart context revalidates after mutation; align with wishlist flow fix.
   - Observation: Navigating to `/cart` immediately after shows "Your cart is empty" while authenticated; API calls to `/api/cart` previously returned 200 in other sessions—needs deeper repro/debug.
 
+- [ ] Bad Practice: Inconsistent image data shape between schema and UI code
+  - Symptom: Prisma `Product.images` is a `String` JSON, but API docs and some code treat it as `string[]`.
+  - Impact: Requires frequent `JSON.parse` across UI; risk of type drift and runtime errors.
+  - Fix: Standardize on `string[]` at the DB layer or centralize serialization/deserialization with types.
+
 - [ ] Product Wishlist button toggles active state but doesn’t surface confirmation/toast
   - Symptom: Clicking "Wishlist" on `/products/[id]` toggles button active state but no confirmation or header indicator change, making it unclear if the action succeeded.
   - Impact: UX clarity issue.
@@ -76,9 +129,24 @@ Status key: [ ] open, [wip] in progress, [x] fixed/verified
   - Impact: Confirms search OK; highlights broader cart header refresh issue.
   - Next: Centralize cart state updates and ensure header derives from server state with revalidation on mutations.
 
+- [ ] Bad Practice: Lack of input validation across APIs
+  - Symptom: Most routes accept JSON bodies and query params without Zod/validation (e.g., orders, cart, wishlist, products).
+  - Impact: Increases risk of invalid data, type issues, and security vulnerabilities.
+  - Fix: Add schema validation for all inputs with consistent error responses.
+
+- [ ] Bad Practice: Sensitive fields handled on client without masking/validation
+  - Symptom: Checkout card data (`cardNumber`, `cvv`) collected on client without input masking/format validation.
+  - Impact: High risk of incorrect data entry; demo app but still needs UX safeguards.
+  - Fix: Add masking and client-side validation rules.
+
 - [ ] Add to Cart does not update from the product detail page
   - Symptom: On `/products?category=clothing`, clicking "Add to Cart" shows an alert and header count increments from `0` to `1`. but when a product is clicked and etails open clisking on add to cart does not work.
   - status: Investigation Pending
+
+- [ ] Incomplete Feature: Product detail page actions not wired
+  - Symptom: `/products/[id]` lacks onClick handlers for Add to Cart and Wishlist; no API calls.
+  - Impact: Users cannot add from detail page; inconsistent with card behavior.
+  - Fix: Implement handlers using `useCart` and `/api/wishlist` similar to `ProductCard`.
 
 - [wip] Customer can submit product review (queued for approval)
   - Symptom: On `/products/[id]`, selecting rating + entering comment then submitting shows success alert indicating moderation; form resets/disabled accordingly.
@@ -89,8 +157,28 @@ Status key: [ ] open, [wip] in progress, [x] fixed/verified
   - Symptom: Clicking "Reorder Items" on `/account/orders` highlights the button but does not show a confirmation, add items back to cart, or navigate to checkout/cart.
   - Impact: Users cannot complete reorder flow.
   - Next: Implement reorder handler to add items to cart and redirect to `/cart` or `/checkout`, with success toast.
+
+- [ ] Security: Admin API uses role checks but lacks CSRF protection and anti-abuse controls
+  - Symptom: Sensitive `PUT`/`POST` endpoints rely on session cookie; no explicit CSRF tokens or double-submit protections visible.
+  - Impact: Potential CSRF risk for authenticated admins; high impact if exploited.
+  - Fix: Implement CSRF protection for state-changing routes or SameSite=strict with additional safeguards.
+
+- [ ] Bad Practice: No rate limiting or abuse checks on discount validation endpoint
+  - Symptom: `/api/discounts/validate` accepts arbitrary requests without throttling or auth.
+  - Impact: Bruteforce/abuse risk; can be hammered to discover valid codes.
+  - Fix: Add rate limiting and basic abuse detection.
 ##
 # New Issues Identified - 15-Aug-2025
+
+- [ ] Bad Practice: Category sidebar uses `<a>` full reloads instead of client navigation
+  - Symptom: `src/app/products/page.tsx` uses `<a href>` for category links, causing full-page reloads.
+  - Impact: Janky UX and loses client state.
+  - Fix: Use Next.js `Link` for client-side transitions.
+
+- [ ] Incomplete Feature: No sort controls on products page
+  - Symptom: `src/app/products/page.tsx` renders counts and category list but no sort UI (price/name/popularity).
+  - Impact: Requirements for sorting not met.
+  - Fix: Add sort UI and backend query handling.
 
 - [ ] Wishlist persistence failure
   - Symptom: Items added to wishlist on product pages don't persist when navigating to `/account/wishlist` (shows empty).
@@ -98,11 +186,31 @@ Status key: [ ] open, [wip] in progress, [x] fixed/verified
   - Impact: Wishlist functionality not working for users.
   - Fix: Debug wishlist API endpoints and ensure proper data persistence.
 
+- [ ] Incomplete Feature: Catalog filtering/sorting API support vs UI
+  - API docs list `minPrice`, `maxPrice`, and `search` on `/api/products`, but current `GET /api/products` ignores query params; UI has header search only.
+  - Impact: Search/filter requirements not satisfied; inconsistent with docs.
+  - Fix: Implement query param handling and connect UI filters.
+
 - [ ] Session restoration delays with 400 errors
   - Symptom: Occasional 400 (Bad Request) errors during page navigation that resolve automatically after a few seconds.
   - Evidence: Observed during cart loading and page transitions.
   - Impact: Temporary loading states and potential user confusion.
   - Fix: Improve session restoration handling and error recovery.
+
+- [ ] Security/Privacy: Shipping/billing address stored as raw JSON strings
+  - Symptom: `Order.shippingAddress` and `billingAddress` are free-form JSON strings without schema validation.
+  - Impact: Risk of inconsistent data, potential PII mishandling, and XSS if reflected.
+  - Fix: Validate with schemas and store structured fields or typed JSON with sanitization.
+
+- [ ] Security: Missing rate limiting on authentication and mutation endpoints
+  - Symptom: Documentation states no rate limiting is implemented.
+  - Impact: Increases risk of brute-force attacks and abuse of endpoints like login, signup, discounts, cart, and orders.
+  - Fix: Implement per-IP and per-account rate limiting for auth and sensitive APIs.
+
+- [ ] Security: Passwords for test users are documented in repo
+  - Symptom: `dev/test-users.md` exposes plaintext test credentials (`admin@mockshop.com` / `password123`, etc.).
+  - Impact: If deployed as-is or reused, increases risk of credential stuffing and unauthorized access.
+  - Fix: Ensure test creds are only for local dev; remove from public docs before deployment and enforce strong passwords in production.
 
 ### Testing Status Update - 15-Aug-2025
 

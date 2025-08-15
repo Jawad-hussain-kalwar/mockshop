@@ -9,13 +9,168 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 // import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, Settings, Bell, Shield, User } from "lucide-react"
+
+function ChangePasswordForm({ onClose }: { onClose: () => void }) {
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (newPassword !== confirmPassword) {
+      alert('New passwords do not match')
+      return
+    }
+
+    if (newPassword.length < 8) {
+      alert('Password must be at least 8 characters long')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/user/change-password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword })
+      })
+
+      if (response.ok) {
+        alert('Password changed successfully!')
+        onClose()
+      } else {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to change password')
+      }
+    } catch (error) {
+      console.error('Failed to change password:', error)
+      alert('Failed to change password. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="currentPassword">Current Password</Label>
+        <Input
+          id="currentPassword"
+          type="password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor="newPassword">New Password</Label>
+        <Input
+          id="newPassword"
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          required
+          minLength={8}
+        />
+      </div>
+      <div>
+        <Label htmlFor="confirmPassword">Confirm New Password</Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          minLength={8}
+        />
+      </div>
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Changing...' : 'Change Password'}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+function DeleteAccountForm({ onClose, onDelete }: { onClose: () => void; onDelete: () => void }) {
+  const [confirmText, setConfirmText] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (confirmText !== "DELETE") {
+      alert('Please type "DELETE" to confirm')
+      return
+    }
+
+    setIsLoading(true)
+    await onDelete()
+    setIsLoading(false)
+    onClose()
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="text-red-600">
+        <p className="font-semibold">Warning: This action cannot be undone!</p>
+        <p className="text-sm mt-2">
+          Deleting your account will permanently remove all your data, including:
+        </p>
+        <ul className="text-sm mt-2 list-disc list-inside">
+          <li>Your profile information</li>
+          <li>Order history</li>
+          <li>Saved addresses</li>
+          <li>Wishlist items</li>
+          <li>Reviews and ratings</li>
+        </ul>
+      </div>
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label htmlFor="confirmText">
+            Type "DELETE" to confirm account deletion
+          </Label>
+          <Input
+            id="confirmText"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="DELETE"
+            required
+          />
+        </div>
+        <div className="flex justify-end space-x-2">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            variant="destructive" 
+            disabled={isLoading || confirmText !== "DELETE"}
+          >
+            {isLoading ? 'Deleting...' : 'Delete Account'}
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}
 
 export default function AccountSettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false)
   const [settings, setSettings] = useState({
     emailNotifications: true,
     smsNotifications: false,
@@ -24,6 +179,11 @@ export default function AccountSettingsPage() {
     twoFactorAuth: false,
     publicProfile: false
   })
+  const [profile, setProfile] = useState({
+    firstName: "",
+    lastName: "",
+    email: ""
+  })
 
   useEffect(() => {
     if (status === "loading") return
@@ -31,7 +191,25 @@ export default function AccountSettingsPage() {
       router.push("/auth/signin")
       return
     }
+    fetchSettings()
   }, [session, status, router])
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('/api/user/settings')
+      if (response.ok) {
+        const data = await response.json()
+        setSettings(data.settings)
+        setProfile({
+          firstName: data.user.firstName || "",
+          lastName: data.user.lastName || "",
+          email: data.user.email || ""
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error)
+    }
+  }
 
   const handleSettingChange = (key: string, value: boolean) => {
     setSettings(prev => ({
@@ -42,10 +220,66 @@ export default function AccountSettingsPage() {
 
   const handleSaveSettings = async () => {
     setIsLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    alert('Settings saved successfully!')
-    setIsLoading(false)
+    try {
+      const response = await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings, profile })
+      })
+
+      if (response.ok) {
+        alert('Settings saved successfully!')
+      } else {
+        throw new Error('Failed to save settings')
+      }
+    } catch (error) {
+      console.error('Failed to save settings:', error)
+      alert('Failed to save settings. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDownloadData = async () => {
+    try {
+      const response = await fetch('/api/user/data-export')
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `user-data-${new Date().toISOString().split('T')[0]}.json`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        alert('Your data has been downloaded successfully!')
+      } else {
+        throw new Error('Failed to download data')
+      }
+    } catch (error) {
+      console.error('Failed to download data:', error)
+      alert('Failed to download data. Please try again.')
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      try {
+        const response = await fetch('/api/user/delete-account', {
+          method: 'DELETE'
+        })
+        if (response.ok) {
+          alert('Your account has been deleted successfully.')
+          router.push('/')
+        } else {
+          throw new Error('Failed to delete account')
+        }
+      } catch (error) {
+        console.error('Failed to delete account:', error)
+        alert('Failed to delete account. Please try again.')
+      }
+    }
   }
 
   if (status === "loading") {
@@ -123,16 +357,24 @@ export default function AccountSettingsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" defaultValue="Admin" />
+                    <Input 
+                      id="firstName" 
+                      value={profile.firstName}
+                      onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" defaultValue="User" />
+                    <Input 
+                      id="lastName" 
+                      value={profile.lastName}
+                      onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
+                    />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" defaultValue={session.user.email || ""} disabled />
+                  <Input id="email" type="email" value={profile.email} disabled />
                   <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
                 </div>
                 <div className="flex items-center justify-between">
@@ -226,13 +468,25 @@ export default function AccountSettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Button variant="outline" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setShowChangePassword(true)}
+                  >
                     Change Password
                   </Button>
-                  <Button variant="outline" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleDownloadData}
+                  >
                     Download My Data
                   </Button>
-                  <Button variant="destructive" className="w-full">
+                  <Button 
+                    variant="destructive" 
+                    className="w-full"
+                    onClick={() => setShowDeleteAccount(true)}
+                  >
                     Delete Account
                   </Button>
                 </div>
@@ -247,6 +501,26 @@ export default function AccountSettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Change Password Modal */}
+        <Dialog open={showChangePassword} onOpenChange={setShowChangePassword}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Change Password</DialogTitle>
+            </DialogHeader>
+            <ChangePasswordForm onClose={() => setShowChangePassword(false)} />
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Account Modal */}
+        <Dialog open={showDeleteAccount} onOpenChange={setShowDeleteAccount}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Account</DialogTitle>
+            </DialogHeader>
+            <DeleteAccountForm onClose={() => setShowDeleteAccount(false)} onDelete={handleDeleteAccount} />
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   )

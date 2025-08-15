@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ShoppingCart, Heart, Share2 } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { ProductReviews } from "@/components/reviews/product-reviews"
+import { ProductActions } from "@/components/product/product-actions"
 
 async function getProduct(id: string) {
   const product = await prisma.product.findUnique({
@@ -133,27 +134,15 @@ export default async function ProductPage({
               )}
             </div>
 
-            <div className="space-y-4">
-              <Button 
-                size="lg" 
-                className="w-full"
-                disabled={product.stockQuantity === 0}
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Add to Cart
-              </Button>
-              
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Wishlist
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-              </div>
-            </div>
+            <ProductActions 
+              product={{
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                stockQuantity: product.stockQuantity,
+                images: product.images
+              }}
+            />
 
             {product.description && (
               <div>

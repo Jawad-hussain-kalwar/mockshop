@@ -36,10 +36,17 @@ interface Product {
   createdAt: string
 }
 
+interface Category {
+  id: string
+  name: string
+  slug: string
+}
+
 export default function AdminProductsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
@@ -56,6 +63,7 @@ export default function AdminProductsPage() {
       return
     }
     fetchProducts()
+    fetchCategories()
   }, [session, status, router])
 
   const fetchProducts = async () => {
@@ -69,6 +77,18 @@ export default function AdminProductsPage() {
       console.error('Failed to fetch products:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data.categories || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error)
     }
   }
 
@@ -196,9 +216,11 @@ export default function AdminProductsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="electronics">Electronics</SelectItem>
-                  <SelectItem value="clothing">Clothing</SelectItem>
-                  <SelectItem value="home">Home & Garden</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select value={stockFilter} onValueChange={setStockFilter}>

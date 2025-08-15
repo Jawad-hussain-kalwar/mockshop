@@ -10,7 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { useCart } from "@/contexts/cart-context"
 import { ArrowLeft, Package, Eye, Truck } from "lucide-react"
+import { toast } from "sonner"
 
 interface OrderItem {
   id: string
@@ -36,8 +38,10 @@ interface Order {
 export default function OrdersPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { addItem } = useCart()
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [reorderingOrderId, setReorderingOrderId] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === "loading") return
@@ -86,6 +90,40 @@ export default function OrdersPage() {
         return <Truck className="h-4 w-4" />
       default:
         return <Package className="h-4 w-4" />
+    }
+  }
+
+  const handleReorder = async (order: Order) => {
+    setReorderingOrderId(order.id)
+    try {
+      let successCount = 0
+      let failedItems: string[] = []
+
+      for (const item of order.items) {
+        try {
+          await addItem(item.product.id, item.quantity)
+          successCount++
+        } catch (error) {
+          console.error(`Failed to add ${item.product.name} to cart:`, error)
+          failedItems.push(item.product.name)
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} item${successCount !== 1 ? 's' : ''} added to cart!`)
+        if (failedItems.length === 0) {
+          router.push('/cart')
+        }
+      }
+
+      if (failedItems.length > 0) {
+        toast.error(`Failed to add: ${failedItems.join(', ')}`)
+      }
+    } catch (error) {
+      console.error('Reorder failed:', error)
+      toast.error('Failed to reorder items. Please try again.')
+    } finally {
+      setReorderingOrderId(null)
     }
   }
 
@@ -232,8 +270,13 @@ export default function OrdersPage() {
                         Track Package
                       </Button>
                     )}
-                    <Button variant="outline" size="sm">
-                      Reorder Items
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleReorder(order)}
+                      disabled={reorderingOrderId === order.id}
+                    >
+                      {reorderingOrderId === order.id ? 'Adding...' : 'Reorder Items'}
                     </Button>
                   </div>
                 </CardContent>

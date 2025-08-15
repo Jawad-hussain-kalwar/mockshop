@@ -2,6 +2,15 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+// Simple in-memory cache for dashboard stats
+interface CacheEntry {
+  data: any
+  timestamp: number
+}
+
+const dashboardCache = new Map<string, CacheEntry>()
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes in milliseconds
+
 export async function GET() {
   try {
     const session = await auth()
@@ -18,6 +27,21 @@ export async function GET() {
 
     if (!user || user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    // Check cache first
+    const cacheKey = 'dashboard-stats'
+    const cachedEntry = dashboardCache.get(cacheKey)
+    const now = Date.now()
+    
+    if (cachedEntry && (now - cachedEntry.timestamp) < CACHE_DURATION) {
+      // Return cached data with cache headers
+      const response = NextResponse.json({ stats: cachedEntry.data })
+      response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
+      response.headers.set('CDN-Cache-Control', 'public, max-age=300')
+      response.headers.set('Vercel-CDN-Cache-Control', 'public, max-age=300')
+      response.headers.set('X-Cache', 'HIT')
+      return response
     }
 
     // Fetch dashboard statistics
@@ -79,7 +103,21 @@ export async function GET() {
       pendingOrders
     }
 
-    return NextResponse.json({ stats })
+    // Cache the data in memory
+    dashboardCache.set(cacheKey, {
+      data: stats,
+      timestamp: now
+    })
+
+    // Add caching headers for dashboard stats
+    // Cache for 5 minutes (300 seconds) since dashboard data doesn't change frequently
+    const response = NextResponse.json({ stats })
+    response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
+    response.headers.set('CDN-Cache-Control', 'public, max-age=300')
+    response.headers.set('Vercel-CDN-Cache-Control', 'public, max-age=300')
+    response.headers.set('X-Cache', 'MISS')
+    
+    return response
   } catch (error) {
     console.error("Admin dashboard error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

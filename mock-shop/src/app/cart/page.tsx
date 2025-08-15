@@ -1,126 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react"
+import { useCart } from "@/contexts/cart-context"
 import Link from "next/link"
 import Image from "next/image"
 
-interface CartItem {
-  id: string
-  quantity: number
-  product: {
-    id: string
-    name: string
-    price: number
-    images: string
-    stockQuantity: number
-  }
-}
-
 export default function CartPage() {
-  const { data: session } = useSession()
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { items: cartItems, total, updateQuantity, removeItem, refreshCart } = useCart()
 
   useEffect(() => {
-    if (session?.user) {
-      fetchCartItems()
-    } else {
-      // Load from localStorage for non-authenticated users
-      const localCart = localStorage.getItem('cart')
-      if (localCart) {
-        setCartItems(JSON.parse(localCart))
-      }
-      setIsLoading(false)
-    }
-  }, [session])
-
-  const fetchCartItems = async () => {
-    try {
-      const response = await fetch('/api/cart')
-      if (response.ok) {
-        const data = await response.json()
-        setCartItems(data.items || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch cart items:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const updateQuantity = async (itemId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      removeItem(itemId)
-      return
-    }
-
-    try {
-      if (session?.user) {
-        await fetch('/api/cart', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ itemId, quantity: newQuantity })
-        })
-      } else {
-        // Update localStorage for non-authenticated users
-        const updatedItems = cartItems.map(item =>
-          item.id === itemId ? { ...item, quantity: newQuantity } : item
-        )
-        setCartItems(updatedItems)
-        localStorage.setItem('cart', JSON.stringify(updatedItems))
-      }
-      
-      setCartItems(prev => 
-        prev.map(item => 
-          item.id === itemId ? { ...item, quantity: newQuantity } : item
-        )
-      )
-    } catch (error) {
-      console.error('Failed to update quantity:', error)
-    }
-  }
-
-  const removeItem = async (itemId: string) => {
-    try {
-      if (session?.user) {
-        await fetch('/api/cart', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ itemId })
-        })
-      } else {
-        // Update localStorage for non-authenticated users
-        const updatedItems = cartItems.filter(item => item.id !== itemId)
-        setCartItems(updatedItems)
-        localStorage.setItem('cart', JSON.stringify(updatedItems))
-      }
-      
-      setCartItems(prev => prev.filter(item => item.id !== itemId))
-    } catch (error) {
-      console.error('Failed to remove item:', error)
-    }
-  }
+    refreshCart()
+  }, [refreshCart])
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0)
   const tax = subtotal * 0.1 // 10% tax
-  const total = subtotal + tax
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen">
-        <Header />
-        <main className="container mx-auto px-4 py-8">
-          <div className="text-center">Loading cart...</div>
-        </main>
-      </div>
-    )
-  }
+  const totalWithTax = subtotal + tax
 
   if (cartItems.length === 0) {
     return (
@@ -236,7 +135,7 @@ export default function CartPage() {
                   <hr />
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>${totalWithTax.toFixed(2)}</span>
                   </div>
                 </div>
                 

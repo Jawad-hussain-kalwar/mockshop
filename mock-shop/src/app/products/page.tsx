@@ -1,8 +1,30 @@
 import { Header } from "@/components/layout/header"
 import { ProductCard } from "@/components/products/product-card"
+import { ProductFilters } from "@/components/products/product-filters"
 import { prisma } from "@/lib/prisma"
 
-async function getProducts(categorySlug?: string, searchQuery?: string) {
+async function getProducts(
+  categorySlug?: string,
+  searchQuery?: string,
+  minPrice?: number,
+  maxPrice?: number,
+  sortBy?: string
+) {
+  const orderBy = (() => {
+    switch (sortBy) {
+      case 'price-asc':
+        return { price: 'asc' as const }
+      case 'price-desc':
+        return { price: 'desc' as const }
+      case 'name-asc':
+        return { name: 'asc' as const }
+      case 'name-desc':
+        return { name: 'desc' as const }
+      default:
+        return { createdAt: 'desc' as const }
+    }
+  })()
+
   const products = await prisma.product.findMany({
     where: {
       isActive: true,
@@ -24,14 +46,22 @@ async function getProducts(categorySlug?: string, searchQuery?: string) {
             }
           }
         ]
+      }),
+      ...(minPrice !== undefined && {
+        price: {
+          gte: minPrice
+        }
+      }),
+      ...(maxPrice !== undefined && {
+        price: {
+          lte: maxPrice
+        }
       })
     },
     include: {
       category: true,
     },
-    orderBy: {
-      createdAt: 'desc'
-    }
+    orderBy
   })
 
   return products
@@ -47,46 +77,43 @@ async function getCategories() {
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; search?: string }>
+  searchParams: Promise<{
+    category?: string;
+    search?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    sortBy?: string;
+  }>
 }) {
   const params = await searchParams
-  const products = await getProducts(params.category, params.search)
+  const minPrice = params.minPrice ? parseFloat(params.minPrice) : undefined
+  const maxPrice = params.maxPrice ? parseFloat(params.maxPrice) : undefined
+
+  const products = await getProducts(
+    params.category,
+    params.search,
+    minPrice,
+    maxPrice,
+    params.sortBy
+  )
   const categories = await getCategories()
 
   return (
     <div className="min-h-screen">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-8">
-          {/* Sidebar */}
+          {/* Filters Sidebar */}
           <aside className="w-full md:w-64">
-            <h2 className="text-lg font-semibold mb-4">Categories</h2>
-            <div className="space-y-2">
-              <a
-                href="/products"
-                className={`block px-3 py-2 rounded-md text-sm ${
-                  !params.category
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                All Products
-              </a>
-              {categories.map((category) => (
-                <a
-                  key={category.id}
-                  href={`/products?category=${category.slug}`}
-                  className={`block px-3 py-2 rounded-md text-sm ${
-                    params.category === category.slug
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {category.name}
-                </a>
-              ))}
-            </div>
+            <ProductFilters
+              categories={categories}
+              currentCategory={params.category}
+              currentSearch={params.search}
+              currentMinPrice={minPrice}
+              currentMaxPrice={maxPrice}
+              currentSortBy={params.sortBy}
+            />
           </aside>
 
           {/* Products Grid */}
@@ -97,8 +124,8 @@ export default async function ProductsPage({
                   {params.search
                     ? `Search Results for "${params.search}"`
                     : params.category
-                    ? categories.find(c => c.slug === params.category)?.name || 'Products'
-                    : 'All Products'}
+                      ? categories.find(c => c.slug === params.category)?.name || 'Products'
+                      : 'All Products'}
                 </h1>
                 {params.search && (
                   <p className="text-sm text-gray-500 mt-1">
@@ -116,13 +143,13 @@ export default async function ProductsPage({
             {products.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-500">
-                  {params.search 
+                  {params.search
                     ? `No products found for "${params.search}". Try a different search term.`
                     : 'No products found.'}
                 </p>
                 {params.search && (
-                  <a 
-                    href="/products" 
+                  <a
+                    href="/products"
                     className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
                     View All Products

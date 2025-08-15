@@ -16,12 +16,7 @@ export async function GET() {
       include: {
         product: {
           include: {
-            category: {
-              select: {
-                name: true,
-                slug: true
-              }
-            }
+            category: true
           }
         }
       },
@@ -61,7 +56,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
-    // Check if already in wishlist
+    // Check if item already exists in wishlist
     const existingItem = await prisma.wishlist.findUnique({
       where: {
         userId_productId: {
@@ -72,7 +67,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingItem) {
-      return NextResponse.json({ error: "Product already in wishlist" }, { status: 400 })
+      return NextResponse.json({ error: "Item already in wishlist" }, { status: 400 })
     }
 
     // Add to wishlist
@@ -83,9 +78,43 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ message: "Product added to wishlist" }, { status: 201 })
+    return NextResponse.json({ message: "Item added to wishlist" }, { status: 201 })
   } catch (error) {
     console.error("Add to wishlist error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+// DELETE /api/wishlist - Remove item from wishlist
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth()
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { productId } = await request.json()
+
+    if (!productId) {
+      return NextResponse.json({ error: "Product ID is required" }, { status: 400 })
+    }
+
+    // Remove from wishlist
+    const result = await prisma.wishlist.deleteMany({
+      where: {
+        userId: session.user.id,
+        productId: productId
+      }
+    })
+
+    if (result.count === 0) {
+      return NextResponse.json({ error: "Item not found in wishlist" }, { status: 404 })
+    }
+
+    return NextResponse.json({ message: "Item removed from wishlist" })
+  } catch (error) {
+    console.error("Remove from wishlist error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

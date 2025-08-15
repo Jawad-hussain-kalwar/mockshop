@@ -100,8 +100,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               product: {
                 id: product.id,
                 name: product.name,
-                price: product.price,
-                images: product.images
+                price: Number(product.price),
+                images: product.images,
+                stockQuantity: product.stockQuantity
               }
             })
           }

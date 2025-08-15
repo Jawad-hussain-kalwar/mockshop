@@ -239,6 +239,7 @@ export default function AdminProductsPage() {
                           alt={product.name}
                           fill
                           className="object-cover rounded-md"
+                          sizes="64px"
                         />
                       </div>
                       

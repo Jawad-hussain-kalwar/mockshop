@@ -136,6 +136,7 @@ export default async function OrderConfirmationPage({
                             alt={item.product.name}
                             fill
                             className="object-cover rounded-md"
+                            sizes="64px"
                           />
                         </div>
                         <div className="flex-1">

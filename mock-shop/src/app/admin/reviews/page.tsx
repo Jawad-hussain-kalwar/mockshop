@@ -217,6 +217,7 @@ export default function AdminReviewsPage() {
                           alt={review.product.name}
                           fill
                           className="object-cover rounded-md"
+                          sizes="64px"
                         />
                       </div>
                       

@@ -277,6 +277,7 @@ export default function AdminOrdersPage() {
                                 alt={item.product.name}
                                 fill
                                 className="object-cover rounded"
+                                sizes="32px"
                               />
                             </div>
                             <span className="text-sm">

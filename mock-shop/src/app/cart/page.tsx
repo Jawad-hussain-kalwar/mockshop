@@ -164,6 +164,7 @@ export default function CartPage() {
                           alt={item.product.name}
                           fill
                           className="object-cover rounded-md"
+                          sizes="64px"
                         />
                       </div>
                       

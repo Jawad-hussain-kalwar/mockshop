@@ -46,47 +46,47 @@
     - Implement responsive design for all screen sizes
     - _Requirements: 1.1, 1.2, 5.1_
 
-- [x] 5. Develop product catalog functionality
-  - [x] 5.1 Create product listing and filtering
+- [ ] 5. Develop product catalog functionality
+  - [ ] 5.1 Create product listing and filtering
     - Implement product catalog page with pagination
     - Build search functionality with real-time filtering
     - Create category-based filtering and sorting
     - _Requirements: 1.1, 6.1, 6.2, 6.3_
   
-  - [x] 5.2 Implement category management
+  - [ ] 5.2 Implement category management
     - Create hierarchical category system
     - Build category navigation and breadcrumbs
     - Implement category-based product organization
     - _Requirements: 8.1, 8.2_
 
-- [x] 6. Build shopping cart functionality
-  - [x] 6.1 Implement cart state management
+- [ ] 6. Build shopping cart functionality
+  - [ ] 6.1 Implement cart state management
     - Create cart context and reducer for state management
     - Build add to cart, update quantity, and remove item functions
     - Implement cart persistence for logged-in users
     - _Requirements: 1.3, 7.2, 7.3, 7.4, 7.5_
   
-  - [x] 6.2 Create cart UI components
+  - [ ] 6.2 Create cart UI components
     - Build cart drawer/sidebar with item display
     - Create cart summary with totals calculation
     - Implement cart icon with item count badge
     - _Requirements: 7.2, 7.3_
 
-- [x] 7. Develop checkout and order processing
-  - [x] 7.1 Create checkout form and validation
+- [ ] 7. Develop checkout and order processing
+  - [ ] 7.1 Create checkout form and validation
     - Build multi-step checkout form (shipping, payment, review)
     - Implement form validation with Zod schemas
     - Support both guest and registered user checkout
     - _Requirements: 1.4, 3.5, 13.1, 13.2_
   
-  - [x] 7.2 Implement order creation and processing
+  - [ ] 7.2 Implement order creation and processing
     - Create order processing logic with inventory checks
     - Implement simulated payment processing
     - Generate order confirmations and receipts
     - _Requirements: 1.5, 13.3, 13.4_
 
-- [x] 8. Build user account management
-  - [x] 8.1 Create user profile and order history
+- [ ] 8. Build user account management
+  - [ ] 8.1 Create user profile and order history
     - Build user dashboard with account details
     - Implement order history display with status tracking
     - Create order details view with tracking information
@@ -98,14 +98,14 @@
     - Implement wishlist persistence for registered users
     - _Requirements: 7.1_
 
-- [x] 9. Develop admin management interface
-  - [x] 9.1 Create product management system
+- [ ] 9. Develop admin management interface
+  - [ ] 9.1 Create product management system
     - Build admin product listing with CRUD operations
     - Implement product creation and editing forms
     - Create image upload and management functionality
     - _Requirements: 2.2, 2.3_
   
-  - [x] 9.2 Implement inventory management
+  - [ ] 9.2 Implement inventory management
     - Create stock level tracking and updates
     - Build low stock alerts and out-of-stock handling
     - Implement inventory adjustment interface

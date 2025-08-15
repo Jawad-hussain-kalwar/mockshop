@@ -67,6 +67,7 @@ export default async function ProductPage({
                 fill
                 className="object-cover"
                 priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
             </div>
             {images.length > 1 && (
@@ -78,6 +79,7 @@ export default async function ProductPage({
                       alt={`${product.name} ${index + 2}`}
                       fill
                       className="object-cover"
+                      sizes="80px"
                     />
                   </div>
                 ))}

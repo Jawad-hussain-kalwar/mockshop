@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 // GET /api/admin/products/[id] - Get single product for admin
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -24,8 +24,9 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
+    const { id } = await params
     const product = await prisma.product.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         category: {
           select: {
@@ -50,7 +51,7 @@ export async function GET(
 // PUT /api/admin/products/[id] - Update product
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -97,8 +98,9 @@ export async function PUT(
       }
     }
 
+    const { id } = await params
     const product = await prisma.product.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         description,
@@ -131,7 +133,7 @@ export async function PUT(
 // PATCH /api/admin/products/[id] - Partial update (e.g., toggle active status)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -152,8 +154,9 @@ export async function PATCH(
 
     const updateData = await request.json()
 
+    const { id } = await params
     const product = await prisma.product.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         category: {
@@ -178,7 +181,7 @@ export async function PATCH(
 // DELETE /api/admin/products/[id] - Delete product
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -197,9 +200,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
+    const { id } = await params
+    
     // Check if product exists
     const product = await prisma.product.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!product) {
@@ -208,7 +213,7 @@ export async function DELETE(
 
     // Check if product has any orders (prevent deletion if it does)
     const orderItems = await prisma.orderItem.findFirst({
-      where: { productId: params.id }
+      where: { productId: id }
     })
 
     if (orderItems) {
@@ -219,22 +224,22 @@ export async function DELETE(
 
     // Delete related cart items first
     await prisma.cartItem.deleteMany({
-      where: { productId: params.id }
+      where: { productId: id }
     })
 
     // Delete related wishlist items
     await prisma.wishlist.deleteMany({
-      where: { productId: params.id }
+      where: { productId: id }
     })
 
     // Delete related reviews
     await prisma.review.deleteMany({
-      where: { productId: params.id }
+      where: { productId: id }
     })
 
     // Finally delete the product
     await prisma.product.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ message: "Product deleted successfully" })
